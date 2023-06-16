@@ -1,0 +1,7 @@
+{
+  "name": "com.daydream.uisystem",
+  "version": "0.0.0",
+  "displayName": "UI System",
+  "description": "Custom UI system which allows for additional functionality and better ease of use over the standard Unity system.",
+  "rootnamespace": "daydream"
+}
