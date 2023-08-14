@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Cursor : MonoBehaviour
+public class WorldCursor : MonoBehaviour
 {
-    public static Cursor Instance;
+    public static WorldCursor Instance;
     static List<GameObject> hoveredObjs = new List<GameObject>();
 
     void Awake()
