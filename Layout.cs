@@ -63,6 +63,9 @@ public class Layout : MonoBehaviour
         }
     }
 
+    private Vector2 _size = Vector2.zero;
+    public Vector2 size { get { return _size; } }
+
     List<RectTransform> layoutElements = new List<RectTransform>();
 
     Vector2 ChangeVectorValue(Vector2 vector, int index, float value) 
@@ -77,45 +80,6 @@ public class Layout : MonoBehaviour
         }
 
         return vector;
-    }
-
-    Bounds UIBounds(RectTransform element)
-    {
-        Vector3 min = Vector3.positiveInfinity;
-        Vector3 max = Vector3.negativeInfinity;
-        Vector3[] corners = new Vector3[4];
-
-        element.GetWorldCorners(corners);
-
-        foreach (Vector3 corner in corners)
-        {
-            min = Vector3.Min(min, corner);
-            max = Vector3.Max(max, corner);
-        }
-
-        foreach (Transform child in element)
-        {
-            if (child.GetComponent<RectTransform>() == null || child.gameObject.name.StartsWith("IGNORELAYOUT") || ignoreObjects.Contains(child.gameObject))
-            {
-                continue;
-            }
-
-            child.GetComponent<RectTransform>().GetWorldCorners(corners);
-
-            foreach (Vector3 corner in corners)
-            {
-                min = Vector3.Min(min, corner);
-                max = Vector3.Max(max, corner);
-            }
-        }
-
-        min -= element.position;
-        max -= element.position;
-
-        Bounds bounds = new Bounds();
-        bounds.SetMinMax(min, max);
-
-        return bounds;
     }
 
     public void UpdateLayoutElements()
@@ -193,7 +157,7 @@ public class Layout : MonoBehaviour
         //Loop through elements to create wrap groups
         for (int i = 0; i < layoutElements.Count; i++)
         {
-            Bounds elementBounds = UIBounds(layoutElements[i]);
+            Bounds elementBounds = layoutElements[i].BoundsWithChildren(ignoreObjects, transform);
             runningOffset += elementBounds.size[dimension];
 
             if (runningOffset > wrapAfter) //larger than wrap limit
@@ -226,11 +190,11 @@ public class Layout : MonoBehaviour
         groupingMaxSize[groupingMaxSize.Count - 1] = ChangeVectorValue(groupingMaxSize[groupingMaxSize.Count - 1], dimension, runningOffset);
 
         //Loop through layout groupings to calculate positions
-        Vector2 maxSize = Vector2.zero;
+        _size = Vector2.zero;
         foreach (Vector2 groupSize in groupingMaxSize)
         {
-            maxSize = ChangeVectorValue(maxSize, (1 - dimension), maxSize[1 - dimension] + groupSize[1 - dimension]);
-            maxSize = ChangeVectorValue(maxSize, dimension, Math.Max(maxSize[dimension], groupSize[dimension]));
+            _size = ChangeVectorValue(_size, (1 - dimension), _size[1 - dimension] + groupSize[1 - dimension]);
+            _size = ChangeVectorValue(_size, dimension, Math.Max(_size[dimension], groupSize[dimension]));
         }
 
         float groupOffset = 0f;
@@ -240,11 +204,11 @@ public class Layout : MonoBehaviour
         }
         else if (align[1 - dimension] * invert[1 - dimension] == 1)
         {
-            groupOffset = bounds.max[1 - dimension] - maxSize[1 - dimension];
+            groupOffset = bounds.max[1 - dimension] - _size[1 - dimension];
         }
         else
         {
-            groupOffset = bounds.center[1 - dimension] - (maxSize[1 - dimension] / 2);
+            groupOffset = bounds.center[1 - dimension] - (_size[1 - dimension] / 2);
         }
 
         for (int i = 0; i < layoutGrouping.Count; i++)
@@ -264,7 +228,7 @@ public class Layout : MonoBehaviour
 
             foreach (RectTransform element in layoutGrouping[i]) 
             {
-                Bounds elementBounds = UIBounds(element);
+                Bounds elementBounds = element.BoundsWithChildren(ignoreObjects, transform);
                 min = Vector2.zero;
                 max = Vector2.zero;
                 min = ChangeVectorValue(min, dimension, Math.Min(invert[dimension] * runningOffset, invert[dimension] * (runningOffset + elementBounds.size[dimension])));
