@@ -5,15 +5,12 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-enum XAlign { Left, Center, Right }
-enum YAlign { Top, Center, Bottom }
-
 [ExecuteInEditMode]
 [RequireComponent(typeof(RectTransform))]
 
 public class Layout : MonoBehaviour
 {
-    [SerializeField] private bool alignByY = true;
+    [SerializeField] private Dimension alignBy = Dimension.y;
     [SerializeField] private bool invertX = false;
     [SerializeField] private bool invertY = true;
     [SerializeField] private XAlign alignX = XAlign.Center;
@@ -137,11 +134,7 @@ public class Layout : MonoBehaviour
         Bounds bounds = new Bounds();
         bounds.SetMinMax(min, max);
 
-        int dimension = 0;
-        if (alignByY)
-        {
-            dimension = 1;
-        }
+        int dimension = (int)alignBy;
 
         float wrapAfter = float.MaxValue;
         if (wrap)
@@ -157,7 +150,7 @@ public class Layout : MonoBehaviour
         //Loop through elements to create wrap groups
         for (int i = 0; i < layoutElements.Count; i++)
         {
-            Bounds elementBounds = layoutElements[i].BoundsWithChildren(ignoreObjects, transform);
+            Bounds elementBounds = layoutElements[i].GetBoundsWithChildren(ignoreObjects, transform);
             runningOffset += elementBounds.size[dimension];
 
             if (runningOffset > wrapAfter) //larger than wrap limit
@@ -228,7 +221,7 @@ public class Layout : MonoBehaviour
 
             foreach (RectTransform element in layoutGrouping[i]) 
             {
-                Bounds elementBounds = element.BoundsWithChildren(ignoreObjects, transform);
+                Bounds elementBounds = element.GetBoundsWithChildren(ignoreObjects, transform);
                 min = Vector2.zero;
                 max = Vector2.zero;
                 min = ChangeVectorValue(min, dimension, Math.Min(invert[dimension] * runningOffset, invert[dimension] * (runningOffset + elementBounds.size[dimension])));
