@@ -65,21 +65,17 @@ public class Layout : MonoBehaviour
 
     List<RectTransform> layoutElements = new List<RectTransform>();
 
-    Vector2 ChangeVectorValue(Vector2 vector, int index, float value) 
+    void OnValidate()
     {
-        if (index == 0)
-        {
-            vector = new Vector2(value, vector.y);
-        }
-        else
-        {
-            vector = new Vector2(vector.x, value);
-        }
-
-        return vector;
+        Apply();
     }
 
-    public void UpdateLayoutElements()
+    void OnEnable()
+    {
+        Apply();
+    }
+
+    void UpdateLayoutElements()
     {
         layoutElements = new List<RectTransform>();
         foreach (Transform child in transform)
@@ -91,19 +87,10 @@ public class Layout : MonoBehaviour
         }
     }
 
-    void OnValidate()
-    { 
-        UpdateLayoutElements();
-        Apply();
-    }
-
-    void Start()
-    {
-        Apply();
-    }
-
     public void Apply()
     {
+        UpdateLayoutElements();
+
         List<Vector3> positions = GetPositions();
 
         for (int i = 0; i < layoutElements.Count; i++)
@@ -150,44 +137,41 @@ public class Layout : MonoBehaviour
         //Loop through elements to create wrap groups
         for (int i = 0; i < layoutElements.Count; i++)
         {
-            Bounds elementBounds = layoutElements[i].GetBoundsWithChildren(ignoreObjects, transform);
-            runningOffset += elementBounds.size[dimension];
+            Bounds elementBounds = layoutElements[i].GetBoundsWithChildren(ignoreObjects, transform.rotation);
+            runningOffset += elementBounds.size[dimension] + padding[dimension];
 
-            if (runningOffset > wrapAfter) //larger than wrap limit
+            if (runningOffset > wrapAfter + padding[dimension]) //larger than wrap limit
             {
-                if (runningOffset == elementBounds.size[dimension]) //Do not wrap because there is only one element in group
+                if (runningOffset == elementBounds.size[dimension] + padding[dimension]) //Do not wrap because there is only one element in group
                 {
                     layoutGrouping.Last().Add(layoutElements[i]);
-                    groupingMaxSize[groupingMaxSize.Count - 1] = ChangeVectorValue(groupingMaxSize[groupingMaxSize.Count - 1], (1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
-                    groupingMaxSize[groupingMaxSize.Count - 1] = ChangeVectorValue(groupingMaxSize[groupingMaxSize.Count - 1], dimension, runningOffset);
+                    groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue((1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
+                    groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - padding[dimension]);
                     runningOffset = 0f;
                     layoutGrouping.Add(new List<RectTransform>());
                     groupingMaxSize.Add(Vector2.zero);
                     continue;
-                } //Wrap and place element in new group
-
-                runningOffset -= elementBounds.size[dimension];
-                groupingMaxSize[groupingMaxSize.Count - 1] = ChangeVectorValue(groupingMaxSize[groupingMaxSize.Count - 1], dimension, runningOffset);
-                layoutGrouping.Add(new List<RectTransform>());
-                groupingMaxSize.Add(Vector2.zero);
-                layoutGrouping.Last().Add(layoutElements[i]);
+                }
+                //Wrap and place element in new group
                 runningOffset = elementBounds.size[dimension] + padding[dimension];
-                groupingMaxSize[groupingMaxSize.Count - 1] = ChangeVectorValue(groupingMaxSize[groupingMaxSize.Count - 1], (1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
+                layoutGrouping.Add(new List<RectTransform>() { layoutElements[i] });
+                groupingMaxSize.Add(Vector2.zero);
+                groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue((1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
+                groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - padding[dimension]);
                 continue;
             }
             //smaller than wrap limit
             layoutGrouping.Last().Add(layoutElements[i]);
-            groupingMaxSize[groupingMaxSize.Count - 1] = ChangeVectorValue(groupingMaxSize[groupingMaxSize.Count - 1], (1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
-            runningOffset += padding[dimension];
+            groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue((1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
+            groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - padding[dimension]);
         }
-        groupingMaxSize[groupingMaxSize.Count - 1] = ChangeVectorValue(groupingMaxSize[groupingMaxSize.Count - 1], dimension, runningOffset);
 
         //Loop through layout groupings to calculate positions
         _size = Vector2.zero;
         foreach (Vector2 groupSize in groupingMaxSize)
         {
-            _size = ChangeVectorValue(_size, (1 - dimension), _size[1 - dimension] + groupSize[1 - dimension]);
-            _size = ChangeVectorValue(_size, dimension, Math.Max(_size[dimension], groupSize[dimension]));
+            _size = _size.ChangeValue((1 - dimension), _size[1 - dimension] + groupSize[1 - dimension]);
+            _size = _size.ChangeValue(dimension, Math.Max(_size[dimension], groupSize[dimension]));
         }
 
         float groupOffset = 0f;
@@ -221,13 +205,13 @@ public class Layout : MonoBehaviour
 
             foreach (RectTransform element in layoutGrouping[i]) 
             {
-                Bounds elementBounds = element.GetBoundsWithChildren(ignoreObjects, transform);
+                Bounds elementBounds = element.GetBoundsWithChildren(ignoreObjects, transform.rotation);
                 min = Vector2.zero;
                 max = Vector2.zero;
-                min = ChangeVectorValue(min, dimension, Math.Min(invert[dimension] * runningOffset, invert[dimension] * (runningOffset + elementBounds.size[dimension])));
-                min = ChangeVectorValue(min, (1 - dimension), Math.Min(invert[1 - dimension] * groupOffset, invert[1 - dimension] * (groupOffset + groupingMaxSize[i][1 - dimension])));
-                max = ChangeVectorValue(max, dimension, Math.Max(invert[dimension] * runningOffset, invert[dimension] * (runningOffset + elementBounds.size[dimension])));
-                max = ChangeVectorValue(max, (1 - dimension), Math.Max(invert[1 - dimension] * groupOffset, invert[1 - dimension] * (groupOffset + groupingMaxSize[i][1 - dimension])));
+                min = min.ChangeValue(dimension, Math.Min(invert[dimension] * runningOffset, invert[dimension] * (runningOffset + elementBounds.size[dimension])));
+                min = min.ChangeValue((1 - dimension), Math.Min(invert[1 - dimension] * groupOffset, invert[1 - dimension] * (groupOffset + groupingMaxSize[i][1 - dimension])));
+                max = max.ChangeValue(dimension, Math.Max(invert[dimension] * runningOffset, invert[dimension] * (runningOffset + elementBounds.size[dimension])));
+                max = max.ChangeValue((1 - dimension), Math.Max(invert[1 - dimension] * groupOffset, invert[1 - dimension] * (groupOffset + groupingMaxSize[i][1 - dimension])));
 
                 Vector3 position = CalculatePositionWithinLimits(elementBounds, dimension, min, max);
                 positions.Add(position);
@@ -235,7 +219,6 @@ public class Layout : MonoBehaviour
             }
             groupOffset += groupingMaxSize[i][1 - dimension] + padding[1 - dimension];
         }
-
         return positions;
     }
 
@@ -272,6 +255,3 @@ public class Layout : MonoBehaviour
         return position;
     }
 }
-
-//invert dimension reverses the order (loop through children backwards)
-//invert 1-dimension only reverses the order of wrap groups, not positions within them
