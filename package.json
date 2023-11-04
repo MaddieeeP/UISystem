@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "displayName": "UI System",
   "description": "Custom UI system which allows for additional functionality and better ease of use over the standard Unity system.",
-  "rootnamespace": "daydream"
+  "rootnamespace": "daydream",
   "dependencies": {
     "com.daydream.extensionmethods": "0.0.0"
   }
