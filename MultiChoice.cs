@@ -6,7 +6,7 @@ using UnityEngine;
 [ExecuteInEditMode]
 [RequireComponent(typeof(Layout))]
 
-public class MultiChoice : MonoBehaviour
+public class MultiChoice : MonoBehaviour, IUIElement
 {
     [SerializeField] private GameObject optionPrefab;
     private int _optionCount;
@@ -54,6 +54,8 @@ public class MultiChoice : MonoBehaviour
 
         transform.GetComponent<Layout>().Apply();
     }
+
+    public void Apply() { }
 
     void SetValue(Transform child)
     {

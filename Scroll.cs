@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Scroll : MonoBehaviour
+public class Scroll : MonoBehaviour, IUIElement
 {
     public Dimension scrollAlong = Dimension.y;
     public bool customScrollBounds = false;
@@ -44,6 +44,8 @@ public class Scroll : MonoBehaviour
         }
         ScrollBy(0f);
     }
+
+    public void Apply() { }
 
     public void ScrollBy(float deltaScroll)
     {

@@ -8,7 +8,7 @@ using UnityEngine.UI;
 [ExecuteInEditMode]
 [RequireComponent(typeof(RectTransform))]
 
-public class Layout : MonoBehaviour
+public class Layout : MonoBehaviour, IUIElement
 {
     [SerializeField] private Dimension alignBy = Dimension.y;
     [SerializeField] private bool invertX = false;
@@ -75,7 +75,7 @@ public class Layout : MonoBehaviour
         Apply();
     }
 
-    void UpdateLayoutElements()
+    public void Initialize()
     {
         layoutElements = new List<RectTransform>();
         foreach (Transform child in transform)
@@ -89,7 +89,7 @@ public class Layout : MonoBehaviour
 
     public void Apply()
     {
-        UpdateLayoutElements();
+        Initialize();
 
         List<Vector3> positions = GetPositions();
 
