@@ -5,17 +5,21 @@ using UnityEngine;
 
 public class Scroll : MonoBehaviour, IUIElement
 {
-    public Dimension scrollAlong = Dimension.y;
-    public bool customScrollBounds = false;
+    [SerializeField] private Dimension _scrollAlong = Dimension.y;
+    [SerializeField] private float _scrollSpeed = 100f;
+    [SerializeField] private bool _keepOffsetOnInitialize = true;
+    [SerializeField] private int _initializeAlign = 0;
 
-    public float maxScroll = 0f;
-    public float minScroll = 0f;
-    private float scrollOffset = 0f;
-
+    private float _maxScroll = 0f;
+    private float _minScroll = 0f;
     private Bounds _contentBounds = new Bounds();
-    public Bounds contentBounds { get { return _contentBounds; } }
-
     private Bounds _bounds = new Bounds();
+
+    //getters and setters
+    public Dimension scrollAlong { get { return _scrollAlong; } }
+    public bool keepOffsetOnInitialize { get { return _keepOffsetOnInitialize; } }
+    public int initializeAlign { get { return _initializeAlign; } set { _initializeAlign = value; } }
+    public Bounds contentBounds { get { return _contentBounds; } }
     public Bounds bounds { get { return _bounds; } }
 
     void OnEnable()
@@ -26,39 +30,37 @@ public class Scroll : MonoBehaviour, IUIElement
     public void Initialize()
     {
         _bounds = transform.GetComponent<RectTransform>().GetBounds(transform.rotation);
-
         _contentBounds = transform.GetComponent<RectTransform>().GetBoundsWithChildren(new List<GameObject>() { gameObject }, transform.rotation);
-        if (!customScrollBounds)
+
+        int dimension = (int)_scrollAlong;
+
+        if (contentBounds.size[dimension] > bounds.size[dimension])
         {
-            int dimension = (int)scrollAlong;
-            if (contentBounds.size[dimension] > bounds.size[dimension])
-            {
-                minScroll = -(contentBounds.max[dimension] - bounds.max[dimension]);
-                maxScroll = -(contentBounds.min[dimension] - bounds.min[dimension]);
-            }
-            else
-            {
-                minScroll = -(contentBounds.min[dimension] - bounds.min[dimension]);
-                maxScroll = -(contentBounds.max[dimension] - bounds.max[dimension]);
-            }
+            _minScroll = -(contentBounds.max[dimension] - bounds.max[dimension]);
+            _maxScroll = -(contentBounds.min[dimension] - bounds.min[dimension]);
         }
+        else
+        {
+            _minScroll = -(contentBounds.min[dimension] - bounds.min[dimension]);
+            _maxScroll = -(contentBounds.max[dimension] - bounds.max[dimension]);
+        }
+        
         ScrollBy(0f);
     }
 
     public void Apply() { }
 
-    public void ScrollBy(float deltaScroll)
+    public void ScrollBy(float deltaScrollInput)
     {
-        float deltaScrollOffset = -scrollOffset;
-        scrollOffset += deltaScroll * 100f;
-        scrollOffset = Math.Clamp(scrollOffset, minScroll, maxScroll);
-        deltaScrollOffset += scrollOffset;
+        float deltaScroll = Math.Clamp(deltaScrollInput * _scrollSpeed, _minScroll, _maxScroll);
+        _minScroll -= deltaScroll;
+        _maxScroll -= deltaScroll;
 
-        int dimension = (int)scrollAlong;
+        int dimension = (int)_scrollAlong;
 
         foreach (Transform child in transform)
         {
-            child.localPosition = transform.localPosition.ChangeValue(dimension, child.localPosition[dimension] + deltaScrollOffset);
+            child.localPosition = transform.localPosition.ChangeValue(dimension, child.localPosition[dimension] + deltaScroll);
         }
     }
 }
