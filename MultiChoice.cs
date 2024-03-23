@@ -3,62 +3,41 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
-[RequireComponent(typeof(Layout))]
-
 public class MultiChoice : MonoBehaviour, IUIElement
 {
-    [SerializeField] private GameObject optionPrefab;
-    private int _optionCount;
-    public int optionCount 
+    [SerializeField] private Layout _optionLayout;
+
+    private int _selectedOption = -1;
+    public int selectedOption { get { return Math.Clamp(_selectedOption, -1, _optionLayout.transform.childCount - 1); } set { _selectedOption = value; } }
+
+    public void SetSelectedOption(int option = -1)
     { 
-        get 
+        int newSelectedOption = Math.Clamp(option, -1, _optionLayout.transform.childCount - 1);
+        if (_selectedOption != newSelectedOption)
         {
-            return _optionCount; 
-        }
-        
-        set
-        {
-            _optionCount = value;
-            Initialize();
+            OnDeselected(_optionLayout.transform.GetChild(_selectedOption));
+            OnSelected(_optionLayout.transform.GetChild(newSelectedOption));
+            _selectedOption = newSelectedOption;
         }
     }
-    private int _selectedOption = -1;
-    public int selectedOption { get { return Math.Clamp(_selectedOption, -1, _optionCount - 1); } set { _selectedOption = value; } }
+
+    public void SetSelectedOption(Transform optionChildTransform)
+    {
+        SetSelectedOption(optionChildTransform.GetSiblingIndex());
+    }
 
     void OnEnable()
     {
         Initialize();
     }
 
-    public void Initialize(int newOptionCount)
+    public virtual void Initialize()
     {
-        _optionCount = newOptionCount;
-        Initialize();
+        _optionLayout.Apply();
     }
 
-    public void Initialize()
-    {
-        if (transform.childCount > 0)
-        {
-            gameObject.DestroyAllChildren();
-        }
-        if (optionPrefab == null || _optionCount < 1)
-        {
-            return;
-        }
-        for (int i = 0; i < _optionCount; i++)
-        {
-            Instantiate(optionPrefab, transform);
-        }
+    public virtual void Apply() { }
 
-        transform.GetComponent<Layout>().Apply();
-    }
-
-    public void Apply() { }
-
-    void SetValue(Transform child)
-    {
-        _selectedOption = child.GetSiblingIndex();
-    }
+    protected virtual void OnSelected(Transform optionChildTransform) { }
+    protected virtual void OnDeselected(Transform optionChildTransform) { }
 }

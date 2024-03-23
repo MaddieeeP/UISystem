@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public enum XAlign { Left, Center, Right }
 public enum YAlign { Bottom, Center, Top }
 public enum ZAlign { Back, Center, Front }
