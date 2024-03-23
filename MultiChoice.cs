@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class MultiChoice : MonoBehaviour, IUIElement
 {
-    [SerializeField] private Layout _optionLayout;
+    [SerializeField] protected Layout _optionLayout;
 
     private int _selectedOption = -1;
 

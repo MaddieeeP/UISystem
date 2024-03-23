@@ -9,60 +9,21 @@ using UnityEngine.UI;
 
 public class Layout : MonoBehaviour, IUIElement
 {
-    [SerializeField] private Dimension alignBy = Dimension.y;
-    [SerializeField] private bool invertX = false;
-    [SerializeField] private bool invertY = true;
-    [SerializeField] private XAlign alignX = XAlign.Center;
-    [SerializeField] private YAlign alignY = YAlign.Center;
-    [SerializeField] private bool wrap = true;
-    [SerializeField] private Vector2 padding = new Vector2(50f, 50f);
-    public List<GameObject> ignoreObjects = new List<GameObject>();
+    [SerializeField] protected Dimension _alignBy = Dimension.y;
+    [SerializeField] protected bool _invertX = false;
+    [SerializeField] protected bool _invertY = true;
+    [SerializeField] protected XAlign _alignX = XAlign.Center;
+    [SerializeField] protected YAlign _alignY = YAlign.Center;
+    [SerializeField] protected bool _wrap = true;
+    [SerializeField] protected Vector2 _padding = new Vector2(50f, 50f);
+    [SerializeField] protected List<GameObject> _ignoreObjects = new List<GameObject>();
+    protected List<RectTransform> _layoutElements = new List<RectTransform>();
+    protected Vector2 _size = Vector2.zero;
 
-    private Vector2 invert 
-    { 
-        get
-        {
-            Vector2 invertVector = new Vector2(1, 1);
-            if (invertX)
-            {
-                invertVector[0] = -1;
-            }
-            if (invertY)
-            {
-                invertVector[1] = -1;
-            }
-            return invertVector;
-        } 
-    }
-    private Vector2 align
-    {
-        get
-        {
-            Vector2 alignVector = new Vector2(0, 0);
-            if (alignX == XAlign.Left)
-            {
-                alignVector[0] = -1;
-            } 
-            else if (alignX == XAlign.Right)
-            {
-                alignVector[0] = 1;
-            }
-            if (alignY == YAlign.Bottom)
-            {
-                alignVector[1] = -1;
-            } 
-            else if (alignY == YAlign.Top)
-            {
-                alignVector[1] = 1;
-            }
-            return alignVector;
-        }
-    }
-
-    private Vector2 _size = Vector2.zero;
+    //getters and setters
     public Vector2 size { get { return _size; } }
-
-    List<RectTransform> layoutElements = new List<RectTransform>();
+    public Vector2 align { get { return new Vector2((int)_alignX, (int)_alignY); } }
+    public Vector2 invert { get { return new Vector2(_invertX ? -1 : 1, _invertY ? -1 : 1); } }
 
     protected virtual void OnValidate()
     {
@@ -76,25 +37,25 @@ public class Layout : MonoBehaviour, IUIElement
 
     public void Initialize()
     {
-        layoutElements = new List<RectTransform>();
+        _layoutElements = new List<RectTransform>();
         foreach (Transform child in transform)
         {
             if (child.GetComponent<RectTransform>() != null)
             {
-                layoutElements.Add(child.GetComponent<RectTransform>());
+                _layoutElements.Add(child.GetComponent<RectTransform>());
             }
         }
     }
 
-    public void Apply()
+    public virtual void Apply()
     {
         Initialize();
 
         List<Vector3> positions = GetPositions();
 
-        for (int i = 0; i < layoutElements.Count; i++)
+        for (int i = 0; i < _layoutElements.Count; i++)
         {
-            layoutElements[i].transform.localPosition = positions[i];
+            _layoutElements[i].transform.localPosition = positions[i];
         }
     }
 
@@ -120,12 +81,12 @@ public class Layout : MonoBehaviour, IUIElement
         Bounds bounds = new Bounds();
         bounds.SetMinMax(min, max);
 
-        int dimension = (int)alignBy;
+        int dimension = (int)_alignBy;
 
-        float wrapAfter = float.MaxValue;
-        if (wrap)
+        float _wrapAfter = float.MaxValue;
+        if (_wrap)
         {
-            wrapAfter = bounds.size[dimension];
+            _wrapAfter = bounds.size[dimension];
         }
 
         float runningOffset = 0f;
@@ -133,36 +94,36 @@ public class Layout : MonoBehaviour, IUIElement
         List<Vector2> groupingMaxSize = new List<Vector2>() { Vector2.zero };
         List<Vector3> positions = new List<Vector3>();
 
-        //Loop through elements to create wrap groups
-        for (int i = 0; i < layoutElements.Count; i++)
+        //Loop through elements to create _wrap groups
+        for (int i = 0; i < _layoutElements.Count; i++)
         {
-            Bounds elementBounds = layoutElements[i].GetBoundsWithChildren(ignoreObjects, transform.rotation);
-            runningOffset += elementBounds.size[dimension] + padding[dimension];
+            Bounds elementBounds = _layoutElements[i].GetBoundsWithChildren(_ignoreObjects, transform.rotation);
+            runningOffset += elementBounds.size[dimension] + _padding[dimension];
 
-            if (runningOffset > wrapAfter + padding[dimension]) //larger than wrap limit
+            if (runningOffset > _wrapAfter + _padding[dimension]) //larger than _wrap limit
             {
-                if (runningOffset == elementBounds.size[dimension] + padding[dimension]) //Do not wrap because there is only one element in group
+                if (runningOffset == elementBounds.size[dimension] + _padding[dimension]) //Do not _wrap because there is only one element in group
                 {
-                    layoutGrouping.Last().Add(layoutElements[i]);
+                    layoutGrouping.Last().Add(_layoutElements[i]);
                     groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue((1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
-                    groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - padding[dimension]);
+                    groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - _padding[dimension]);
                     runningOffset = 0f;
                     layoutGrouping.Add(new List<RectTransform>());
                     groupingMaxSize.Add(Vector2.zero);
                     continue;
                 }
                 //Wrap and place element in new group
-                runningOffset = elementBounds.size[dimension] + padding[dimension];
-                layoutGrouping.Add(new List<RectTransform>() { layoutElements[i] });
+                runningOffset = elementBounds.size[dimension] + _padding[dimension];
+                layoutGrouping.Add(new List<RectTransform>() { _layoutElements[i] });
                 groupingMaxSize.Add(Vector2.zero);
                 groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue((1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
-                groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - padding[dimension]);
+                groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - _padding[dimension]);
                 continue;
             }
-            //smaller than wrap limit
-            layoutGrouping.Last().Add(layoutElements[i]);
+            //smaller than _wrap limit
+            layoutGrouping.Last().Add(_layoutElements[i]);
             groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue((1 - dimension), Math.Max(groupingMaxSize.Last()[1 - dimension], elementBounds.size[1 - dimension]));
-            groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - padding[dimension]);
+            groupingMaxSize[groupingMaxSize.Count - 1] = groupingMaxSize[groupingMaxSize.Count - 1].ChangeValue(dimension, runningOffset - _padding[dimension]);
         }
 
         //Loop through layout groupings to calculate positions
@@ -204,7 +165,7 @@ public class Layout : MonoBehaviour, IUIElement
 
             foreach (RectTransform element in layoutGrouping[i]) 
             {
-                Bounds elementBounds = element.GetBoundsWithChildren(ignoreObjects, transform.rotation);
+                Bounds elementBounds = element.GetBoundsWithChildren(_ignoreObjects, transform.rotation);
                 min = Vector2.zero;
                 max = Vector2.zero;
                 min = min.ChangeValue(dimension, Math.Min(invert[dimension] * runningOffset, invert[dimension] * (runningOffset + elementBounds.size[dimension])));
@@ -214,9 +175,9 @@ public class Layout : MonoBehaviour, IUIElement
 
                 Vector3 position = CalculatePositionWithinLimits(elementBounds, dimension, min, max);
                 positions.Add(position);
-                runningOffset += elementBounds.size[dimension] + padding[dimension];
+                runningOffset += elementBounds.size[dimension] + _padding[dimension];
             }
-            groupOffset += groupingMaxSize[i][1 - dimension] + padding[1 - dimension];
+            groupOffset += groupingMaxSize[i][1 - dimension] + _padding[1 - dimension];
         }
         return positions;
     }
