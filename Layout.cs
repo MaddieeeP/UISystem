@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-[ExecuteInEditMode]
 [RequireComponent(typeof(RectTransform))]
 
 public class Layout : MonoBehaviour, IUIElement
@@ -65,12 +64,12 @@ public class Layout : MonoBehaviour, IUIElement
 
     List<RectTransform> layoutElements = new List<RectTransform>();
 
-    void OnValidate()
+    protected virtual void OnValidate()
     {
         Apply();
     }
 
-    void OnEnable()
+    protected virtual void OnEnable()
     {
         Apply();
     }

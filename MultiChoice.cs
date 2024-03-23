@@ -8,15 +8,25 @@ public class MultiChoice : MonoBehaviour, IUIElement
     [SerializeField] private Layout _optionLayout;
 
     private int _selectedOption = -1;
-    public int selectedOption { get { return Math.Clamp(_selectedOption, -1, _optionLayout.transform.childCount - 1); } set { _selectedOption = value; } }
+
+    //getters and setters
+    public int selectedOption { get { return _selectedOption; } }
 
     public void SetSelectedOption(int option = -1)
-    { 
-        int newSelectedOption = Math.Clamp(option, -1, _optionLayout.transform.childCount - 1);
+    {
+        Apply();
+        int newSelectedOption = option >= -1 && option < _optionLayout.transform.childCount ? option : -1;
+
         if (_selectedOption != newSelectedOption)
         {
-            OnDeselected(_optionLayout.transform.GetChild(_selectedOption));
-            OnSelected(_optionLayout.transform.GetChild(newSelectedOption));
+            if (_selectedOption > -1)
+            {
+                OnDeselected(_optionLayout.transform.GetChild(_selectedOption));
+            }
+            if (newSelectedOption > -1)
+            {
+                OnSelected(_optionLayout.transform.GetChild(newSelectedOption));
+            }
             _selectedOption = newSelectedOption;
         }
     }
@@ -26,17 +36,20 @@ public class MultiChoice : MonoBehaviour, IUIElement
         SetSelectedOption(optionChildTransform.GetSiblingIndex());
     }
 
-    void OnEnable()
+    protected virtual void OnEnable()
     {
-        Initialize();
+        Apply();
     }
 
     public virtual void Initialize()
     {
-        _optionLayout.Apply();
+        Apply();
     }
 
-    public virtual void Apply() { }
+    public virtual void Apply() 
+    {
+        _selectedOption = _selectedOption >= -1 && _selectedOption < _optionLayout.transform.childCount ? _selectedOption : -1;
+    }
 
     protected virtual void OnSelected(Transform optionChildTransform) { }
     protected virtual void OnDeselected(Transform optionChildTransform) { }
