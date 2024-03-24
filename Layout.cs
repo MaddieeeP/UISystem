@@ -82,7 +82,6 @@ public class Layout : MonoBehaviour, IUIElement
         bounds.SetMinMax(min, max);
 
         int dimension = Math.Min((int)_alignBy, 1);
-        Debug.Log(dimension);
         float _wrapAfter = _wrap ? bounds.size[dimension] : float.MaxValue;
 
         float runningOffset = 0f;
